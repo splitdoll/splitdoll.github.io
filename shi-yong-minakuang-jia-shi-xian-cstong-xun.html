@@ -1,0 +1,521 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/theme/css/foundation.min.css" media="all">
+        <script type="text/javascript" src="/theme/js/modernizr.js"></script>
+        <link href='https://fonts.googleapis.com/css?family=Exo+2:400,300,700,300italic,400italic,700italic,900,900italic' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="/theme/css/lamboz.css" media="all">
+        <title>使用Mina框架实现C/S通讯 - split sky</title>
+        <meta charset="utf-8" />
+</head>
+<body>
+    <div class="pages">
+        <ul>
+            <li class="home"><a href="/index.html">首页</a></li>
+            <li ><a href="/pages/about-me.html">about me</a></li>
+        </ul>
+    </div>
+<div class="hp-header-inner">
+    <div class="page-header">
+        <div class="content-header">
+            <div id="title-block">
+            <h1>  <a href="/shi-yong-minakuang-jia-shi-xian-cstong-xun.html" rel="bookmark"
+                    title="Permalink to 使用Mina框架实现C/S通讯">使用Mina框架实现C/S通讯</a></h1>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="content">
+        <div class="data-holder">
+        <div class="row">
+           <div class="large-10 content-column column">
+<div class="content-article">
+    <header class="header-article">
+        <div class="read-more">发布于 -- 2015年 06月 15日</div>
+   </header>
+    <section class='article'>
+
+        <!-- <div class="entry-summary">
+            <p>Apache MINA是一个网络应用框架，可以帮助我们开发高性能和高扩展性的网络应用。它通过封装Java NIO提供了一个支持各种传输协议（如：TCP/IP和UDP/IP）的抽象事件驱动异步API。</p>
+        </div> -->
+
+        <div class="entry-content">
+            <h2>什么是MINA</h2>
+<blockquote>
+<p>Apache MINA is a network application framework which helps users develop high performance and high scalability network applications easily. It provides an abstract event-driven asynchronous API over various transports such as TCP/IP and UDP/IP via Java NIO.<br>
+Apache MINA是一个网络应用框架，可以帮助我们开发高性能和高扩展性的网络应用。它通过封装Java NIO提供了一个支持各种传输协议（如：TCP/IP和UDP/IP）的抽象事件驱动异步API。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p>NIO framework library,
+client server framework library, or
+a networking socket library<br>
+Mina是对Java NIO框架进行了一层封装的Socket库。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p>Apache MINA comes with many subprojects : <br>
+Asyncweb : An HTTP server build on top of MINA asynchronous framework<br>
+FtpServer : A FTP server<br>
+SSHd : A Java library supporting the SSH protocol<br>
+Vysper : An XMPP server<br>
+Apache MINA自带了许多子项目： <br>
+异步http服务 <br>
+ftp服务<br>
+一个支持ssh协议的java库 <br>
+XMPP服务</p>
+</blockquote>
+<hr>
+<p>Mina框架主页<br>
+https://mina.apache.org/<br>
+Mina框架下载地址<br>
+https://mina.apache.org/downloads-mina.html</p>
+<h3>为什么使用Mina?</h3>
+<h4>传统socket：阻塞式通信</h4>
+<p>每建立一个Socket连接时，同时创建一个新线程对该Socket进行单独通信（采用阻塞的方式通信）。这种方式具有很高的响应速度，并且控制起来也很简单，在连接数较少的时候非常有效，但是如果对每一个连接都产生一个线程的无疑是对系统资源的一种浪费，如果连接数较多将会出现资源不足的情况。</p>
+<h4>nio：非阻塞通信</h4>
+<p>nio设计背后的基石：反应器模式，用于事件多路分离和分派的体系结构模式。</p>
+<p>反应器模式的核心功能如下：
+将事件多路分用
+将事件分派到各自相应的事件处理程序</p>
+<p>NIO 的非阻塞 I/O 机制是围绕 选择器和 通道构建的。Channel 类表示服务器和客户机之间的一种通信机制。Selector 类是 Channel 的多路复用器。 Selector 类将传入客户机请求多路分用并将它们分派到各自的请求处理程序。</p>
+<p>通道(Channel 类)：表示服务器和客户机之间的一种通信机制。
+选择器(Selector类)：是 Channel 的多路复用器。</p>
+<p>Selector 类将传入的客户机请求多路分用并将它们分派到各自的请求处理程序。</p>
+<p>简单的来说：NIO是一个基于事件的IO架构。
+最基本的思想就是：有事件我通知你，你再去做你的事情。而且NIO的主线程只有一个，不像传统的模型，需要多个线程以应对客户端请求，也减轻了JVM的工作量。</p>
+<p>当Channel注册至Selector以后，经典的调用方法如下：nio中取得事件通知，就是在selector的select事件中完成的。在selector事件时有一个线程向操作系统询问，selector中注册的Channel&amp;&amp;SelectionKey的键值对的各种事件是否有发生，如果有则添加到selector的selectedKeys属性Set中去，并返回本次有多少个感兴趣的事情发生。如果发现这个值&gt;0，表示有事件发生，马上迭代selectedKeys中的SelectionKey，根据Key中的表示的事件，来做相应的处理。实际上，这段说明表明了异步socket的核心，即异步socket不过是将多个socket的调度（或者还有他们的线程调度）全部交给操作系统自己去完成，异步的核心Selector，不过是将这些调度收集、分发而已。</p>
+<p>参考文章地址：http://lcllcl987.iteye.com/blog/70703</p>
+<h2>使用Mina框架实现C/S通讯</h2>
+<p>Mina快速入门<br>
+https://mina.apache.org/mina-project/quick-start-guide.html</p>
+<p>Mina API文档<br>
+https://mina.apache.org/mina-project/apidocs/index.html</p>
+<p>在工程中包含以下两个jar<br>
+<img alt="" src="http://p9vlprbvm.bkt.clouddn.com/20150606172138135">  </p>
+<p><strong>客户端代码</strong></p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.client</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.BufferedReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.BufferedWriter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.IOException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.InputStreamReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.OutputStreamWriter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.Socket</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.UnknownHostException</span><span class="o">;</span>
+
+<span class="c1">// Client Socket</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Client</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">_isExit</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Client</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Client</span><span class="o">();</span>
+        <span class="n">client</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">start</span><span class="o">()</span> <span class="o">{</span>
+
+        <span class="n">BufferedReader</span> <span class="n">in</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">Socket</span> <span class="n">socket</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Socket</span><span class="o">(</span><span class="s">&quot;127.0.0.1&quot;</span><span class="o">,</span> <span class="mi">9999</span><span class="o">);</span>
+            <span class="kd">final</span> <span class="n">BufferedReader</span> <span class="n">reader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BufferedReader</span><span class="o">(</span>
+                    <span class="k">new</span> <span class="n">InputStreamReader</span><span class="o">(</span><span class="n">socket</span><span class="o">.</span><span class="na">getInputStream</span><span class="o">()));</span>
+            <span class="n">BufferedWriter</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BufferedWriter</span><span class="o">(</span><span class="k">new</span> <span class="n">OutputStreamWriter</span><span class="o">(</span>
+                    <span class="n">socket</span><span class="o">.</span><span class="na">getOutputStream</span><span class="o">()));</span>
+
+            <span class="c1">// 创建一个线程用于接收消息</span>
+            <span class="k">new</span> <span class="n">Thread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="k">try</span> <span class="o">{</span>
+                        <span class="k">while</span><span class="o">(</span> <span class="o">!</span><span class="n">_isExit</span> <span class="o">){</span>
+                            <span class="n">String</span> <span class="n">line</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">readLine</span><span class="o">();</span>
+                            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;from server : &quot;</span> <span class="o">+</span> <span class="n">line</span><span class="o">);</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}).</span><span class="na">start</span><span class="o">();</span>
+
+            <span class="c1">// 从控制台输入消息，发送到服务端</span>
+            <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BufferedReader</span><span class="o">(</span><span class="k">new</span> <span class="n">InputStreamReader</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">in</span><span class="o">));</span>
+            <span class="n">String</span> <span class="n">line</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="s">&quot;bye&quot;</span><span class="o">.</span><span class="na">equals</span><span class="o">((</span><span class="n">line</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">readLine</span><span class="o">())))</span> <span class="o">{</span>
+                <span class="n">writer</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">line</span><span class="o">);</span>
+                <span class="n">writer</span><span class="o">.</span><span class="na">newLine</span><span class="o">();</span>
+                <span class="n">writer</span><span class="o">.</span><span class="na">flush</span><span class="o">();</span>
+            <span class="o">}</span>
+
+            <span class="n">_isExit</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+            <span class="n">writer</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+            <span class="n">reader</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">UnknownHostException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">_isExit</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">in</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p><strong>服务端代码</strong></p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.server</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.IOException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.InetSocketAddress</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.charset.Charset</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Timer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.TimerTask</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">linchaolong.mina.client.MyIoHandler</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IdleStatus</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolCodecFilter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.textline.TextLineCodecFactory</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.logging.LoggingFilter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.transport.socket.nio.NioSocketAcceptor</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MinaServer</span> <span class="o">{</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">MinaServer</span> <span class="n">server</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MinaServer</span><span class="o">();</span>
+        <span class="n">server</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">start</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">NioSocketAcceptor</span> <span class="n">acceptor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioSocketAcceptor</span><span class="o">();</span>
+
+            <span class="c1">//  消息的传送会经过一系列拦截器</span>
+            <span class="c1">// 添加自定义的拦截器</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">getFilterChain</span><span class="o">().</span><span class="na">addLast</span><span class="o">(</span> <span class="s">&quot;logger&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">LoggingFilter</span><span class="o">()</span> <span class="o">);</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">getFilterChain</span><span class="o">().</span><span class="na">addLast</span><span class="o">(</span> <span class="s">&quot;codec&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">ProtocolCodecFilter</span><span class="o">(</span> <span class="k">new</span> <span class="n">TextLineCodecFactory</span><span class="o">(</span> <span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span> <span class="s">&quot;UTF-8&quot;</span> <span class="o">))));</span> <span class="c1">// 字符编码</span>
+
+            <span class="c1">// 设置会话管理类</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">setHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">MyIoHandler</span><span class="o">());</span>
+
+            <span class="c1">// 设置read buff size（字节）</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">getSessionConfig</span><span class="o">().</span><span class="na">setReadBufferSize</span><span class="o">(</span> <span class="mi">2048</span> <span class="o">);</span> <span class="c1">// buff是可自动扩展的，但设置一个合适值，效率会较高。</span>
+            <span class="c1">// 设置空闲时间（单位：秒，会话空闲时会调用IoHandler的sessionIdle方法，BOTH_IDLE：读和写，READER_IDLE：读，WRITER_IDLE：写）</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">getSessionConfig</span><span class="o">().</span><span class="na">setIdleTime</span><span class="o">(</span><span class="n">IdleStatus</span><span class="o">.</span><span class="na">BOTH_IDLE</span><span class="o">,</span> <span class="mi">10</span><span class="o">);</span>
+
+            <span class="c1">// 监听一个端口</span>
+            <span class="n">acceptor</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="k">new</span> <span class="n">InetSocketAddress</span><span class="o">(</span><span class="mi">9999</span><span class="o">));</span>
+
+            <span class="k">new</span> <span class="n">Timer</span><span class="o">().</span><span class="na">schedule</span><span class="o">(</span><span class="k">new</span> <span class="n">TimerTask</span><span class="o">()</span> <span class="o">{</span>
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="c1">// 发送一个广播，所以会话都能接受到</span>
+                    <span class="n">acceptor</span><span class="o">.</span><span class="na">broadcast</span><span class="o">(</span><span class="s">&quot;Hello All.&quot;</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">},</span> <span class="mi">10000</span><span class="o">);</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p><strong>会话管理类</strong></p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.client</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.net.InetAddress</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.InetSocketAddress</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Date</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.service.IoHandlerAdapter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IdleStatus</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IoSession</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyIoHandler</span> <span class="kd">extends</span> <span class="n">IoHandlerAdapter</span> <span class="o">{</span>
+
+    <span class="c1">// 会话创建</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">sessionCreated</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">sessionCreated</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+        <span class="c1">// 获取客户端ip</span>
+        <span class="n">InetSocketAddress</span> <span class="n">socketAddress</span> <span class="o">=</span> <span class="o">(</span><span class="n">InetSocketAddress</span><span class="o">)</span> <span class="n">session</span><span class="o">.</span><span class="na">getRemoteAddress</span><span class="o">();</span>
+        <span class="n">InetAddress</span> <span class="n">inetAddress</span> <span class="o">=</span> <span class="n">socketAddress</span><span class="o">.</span><span class="na">getAddress</span><span class="o">();</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;sessionCreated  id=&quot;</span> <span class="o">+</span> <span class="n">session</span><span class="o">.</span><span class="na">getId</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; , ip=&quot;</span> <span class="o">+</span> <span class="n">inetAddress</span><span class="o">.</span><span class="na">getHostAddress</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 会话打开</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">sessionOpened</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">sessionOpened</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;sessionOpened&quot;</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 会话关闭</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">sessionClosed</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">sessionClosed</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;sessionClosed&quot;</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 会话等待</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">sessionIdle</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">IdleStatus</span> <span class="n">status</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">sessionIdle</span><span class="o">(</span><span class="n">session</span><span class="o">,</span> <span class="n">status</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span> <span class="s">&quot;IDLE &quot;</span> <span class="o">+</span> <span class="n">session</span><span class="o">.</span><span class="na">getIdleCount</span><span class="o">(</span> <span class="n">status</span> <span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 会话异常</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">exceptionCaught</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">exceptionCaught</span><span class="o">(</span><span class="n">session</span><span class="o">,</span> <span class="n">cause</span><span class="o">);</span>
+        <span class="n">cause</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 接受消息</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">messageReceived</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">Object</span> <span class="n">message</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="c1">// 读取客户端消息</span>
+        <span class="n">String</span> <span class="n">str</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;from session &quot;</span> <span class="o">+</span> <span class="n">session</span><span class="o">.</span><span class="na">getId</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; : &quot;</span> <span class="o">+</span> <span class="n">str</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">str</span><span class="o">.</span><span class="na">trim</span><span class="o">().</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="s">&quot;quit&quot;</span><span class="o">))</span> <span class="o">{</span>
+            <span class="n">session</span><span class="o">.</span><span class="na">close</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="c1">// 给客户端返回数据</span>
+        <span class="n">session</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="k">new</span> <span class="n">Date</span><span class="o">().</span><span class="na">toString</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 发送消息</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">messageSent</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">Object</span> <span class="n">message</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">messageSent</span><span class="o">(</span><span class="n">session</span><span class="o">,</span> <span class="n">message</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;messageSent : &quot;</span> <span class="o">+</span> <span class="n">message</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 关闭输入流</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">inputClosed</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">inputClosed</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;inputClosed&quot;</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<h3>过滤器</h3>
+<p>过滤器的主要作用就是将协议逻辑从业务逻辑中分离出来。<br>
+Codec Filter<br>
+https://mina.apache.org/mina-project/userguide/ch9-codec-filter/ch9-codec-filter.html  </p>
+<p>大多数网络应用程序需要一种方式来找出当前消息结束和下一个消息开始的地方。
+你可以实现这一切的逻辑在你的IoHandler，但加入了ProtocolCodecFilter加入将会使你的代码更清洁，更容易维护。
+它允许您将协议逻辑从业务逻辑（IoHandler）中分离出来。  </p>
+<p>1.创建一个工厂类，实现ProtocolCodecFactory接口  </p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.server.filter</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IoSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolCodecFactory</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolDecoder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolEncoder</span><span class="o">;</span>
+
+<span class="c1">// 工厂类</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyTextLineCodecFactory</span> <span class="kd">implements</span> <span class="n">ProtocolCodecFactory</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">MyTextLineEncoder</span> <span class="n">encoder</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">MyTextLineDecoder</span> <span class="n">decoder</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">MyTextLineCodecFactory</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// 使用自定义编码/解码类</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MyTextLineEncoder</span><span class="o">();</span>
+        <span class="n">decoder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MyTextLineDecoder</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ProtocolEncoder</span> <span class="nf">getEncoder</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">encoder</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ProtocolDecoder</span> <span class="nf">getDecoder</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">decoder</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p>2.自定义编码器  </p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.server.filter</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.nio.charset.Charset</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.charset.CharsetEncoder</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.buffer.IoBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IoSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolEncoder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolEncoderOutput</span><span class="o">;</span>
+
+<span class="c1">// 自定义编码器</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyTextLineEncoder</span> <span class="kd">implements</span> <span class="n">ProtocolEncoder</span> <span class="o">{</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">encode</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">Object</span> <span class="n">message</span><span class="o">,</span>
+            <span class="n">ProtocolEncoderOutput</span> <span class="n">out</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="c1">//字符编码器</span>
+        <span class="n">CharsetEncoder</span> <span class="n">encoder</span> <span class="o">=</span> <span class="o">(</span><span class="n">CharsetEncoder</span><span class="o">)</span> <span class="n">session</span><span class="o">.</span><span class="na">getAttribute</span><span class="o">(</span><span class="s">&quot;encoder&quot;</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">encoder</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">encoder</span> <span class="o">=</span> <span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span> <span class="s">&quot;GBK&quot;</span> <span class="o">).</span><span class="na">newEncoder</span><span class="o">();</span>
+            <span class="n">session</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span><span class="s">&quot;encoder&quot;</span><span class="o">,</span> <span class="n">encoder</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">String</span> <span class="n">value</span> <span class="o">=</span> <span class="o">(</span><span class="n">message</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="s">&quot;&quot;</span> <span class="o">:</span> <span class="n">message</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+        <span class="n">IoBuffer</span> <span class="n">buf</span> <span class="o">=</span> <span class="n">IoBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="n">value</span><span class="o">.</span><span class="na">length</span><span class="o">())</span> <span class="c1">// 初始化buff size为消息长度</span>
+                <span class="o">.</span><span class="na">setAutoExpand</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span> <span class="c1">//可自动扩展buff size</span>
+        <span class="n">buf</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">value</span><span class="o">,</span> <span class="n">encoder</span><span class="o">);</span> <span class="c1">//把消息添加到buff，并使用指定编码器</span>
+
+        <span class="n">buf</span><span class="o">.</span><span class="na">flip</span><span class="o">();</span> <span class="c1">// update position</span>
+        <span class="n">out</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">buf</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">dispose</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p>3.自定义解码器  </p>
+<div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">linchaolong.mina.server.filter</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.nio.ByteBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.CharBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.charset.Charset</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.charset.CharsetDecoder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.buffer.IoBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.core.session.IoSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolDecoder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.mina.filter.codec.ProtocolDecoderOutput</span><span class="o">;</span>
+
+<span class="c1">// 自定义解码器</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyTextLineDecoder</span> <span class="kd">implements</span> <span class="n">ProtocolDecoder</span> <span class="o">{</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">decode</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">IoBuffer</span> <span class="n">in</span><span class="o">,</span> <span class="n">ProtocolDecoderOutput</span> <span class="n">out</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+
+        <span class="c1">// 字符解码器</span>
+        <span class="n">CharsetDecoder</span> <span class="n">decoder</span> <span class="o">=</span> <span class="o">(</span><span class="n">CharsetDecoder</span><span class="o">)</span> <span class="n">session</span><span class="o">.</span><span class="na">getAttribute</span><span class="o">(</span><span class="s">&quot;decoder&quot;</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">decoder</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">decoder</span> <span class="o">=</span> <span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span> <span class="s">&quot;GBK&quot;</span> <span class="o">).</span><span class="na">newDecoder</span><span class="o">();</span>
+            <span class="n">session</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span><span class="s">&quot;decoder&quot;</span><span class="o">,</span> <span class="n">decoder</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="c1">// 开始位置</span>
+        <span class="kt">int</span> <span class="n">startPos</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">position</span><span class="o">();</span>
+        <span class="k">while</span><span class="o">(</span><span class="n">in</span><span class="o">.</span><span class="na">hasRemaining</span><span class="o">()){</span>
+            <span class="kt">byte</span> <span class="n">b</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">b</span> <span class="o">==</span> <span class="sc">&#39;\n&#39;</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">pos</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">position</span><span class="o">();</span>
+                <span class="kt">int</span> <span class="n">limit</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">limit</span><span class="o">();</span>
+
+                <span class="c1">// 截取从开始位置到当前位置的数据，转换为字符串</span>
+                <span class="c1">// 1.设置截取的位置</span>
+                <span class="n">in</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">startPos</span><span class="o">);</span>
+                <span class="n">in</span><span class="o">.</span><span class="na">limit</span><span class="o">(</span><span class="n">pos</span><span class="o">);</span>
+
+                <span class="c1">//2.截取</span>
+                <span class="n">IoBuffer</span> <span class="n">buff</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">slice</span><span class="o">();</span>
+                <span class="kt">byte</span> <span class="n">bytes</span><span class="o">[]</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="n">limit</span><span class="o">-</span><span class="mi">2</span><span class="o">];</span> <span class="c1">// -2 不包含换行符和结束符</span>
+                <span class="n">buff</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">bytes</span><span class="o">);</span>
+
+                <span class="c1">//3.解码</span>
+                <span class="n">ByteBuffer</span> <span class="n">byteBuffer</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">bytes</span><span class="o">);</span>
+                <span class="n">CharBuffer</span> <span class="n">charBuffer</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="na">decode</span><span class="o">(</span><span class="n">byteBuffer</span><span class="o">);</span>
+                <span class="n">out</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">charBuffer</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+
+                <span class="c1">//4.复原</span>
+                <span class="n">in</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">pos</span><span class="o">);</span>
+                <span class="n">in</span><span class="o">.</span><span class="na">limit</span><span class="o">(</span><span class="n">limit</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">finishDecode</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">,</span> <span class="n">ProtocolDecoderOutput</span> <span class="n">out</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">dispose</span><span class="o">(</span><span class="n">IoSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p>4.使用自定义编码过滤器  </p>
+<div class="highlight"><pre><span></span><span class="n">acceptor</span><span class="o">.</span><span class="na">getFilterChain</span><span class="o">().</span><span class="na">addLast</span><span class="o">(</span> <span class="s">&quot;codec&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">ProtocolCodecFilter</span><span class="o">(</span> <span class="k">new</span> <span class="n">MyTextLineCodecFactory</span><span class="o">()));</span>
+</pre></div>
+
+
+<p>项目地址：https://coding.net/u/linchaolong/p/MinaTest</p>
+<blockquote>
+<p>作者：linchaolong<br>
+链接：https://blog.csdn.net/linchaolong/article/details/46463673</p>
+</blockquote>
+        </div>
+    </section>
+    <footer class="footer-article">
+        <div class="tags-and-categories">所属分类 - <a href="/category/program.html">Program</a>
+        | Tagged - <a href="/tag/java.html">Java </a><a href="/tag/nio.html">NIO </a>
+        | <a href="/shi-yong-minakuang-jia-shi-xian-cstong-xun.html" rel="bookmark"
+         title="永久链接 使用Mina框架实现C/S通讯">永久链接</a>
+        </div>
+        <!-- metaldata
+        -->
+    </footer>
+    <!-- disqus  -->
+</div>
+            </div>
+            <div class="large-2 aside column">
+								<h3>分类</h3>
+								<ul>
+									<li class="active"><a href="/category/program.html">Program</a> (3)</li>
+								</ul>
+								<h3>Tags</h3>
+                <ul>
+                    <li><a href="/tag/python.html">python</a>(1)</li>
+                    <li><a href="/tag/java.html">Java</a>(3)</li>
+                    <li><a href="/tag/mq.html">MQ</a>(1)</li>
+                    <li><a href="/tag/nio.html">NIO</a>(1)</li>
+                </ul>
+								<h3>链接</h3>
+                <ul>
+                    <li><a href="http://getpelican.com/">Pelican</a></li>
+                    <li><a href="http://python.org/">Python.org</a></li>
+                    <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                    <li><a href="#">github</a></li>
+                </ul>
+            </div>
+         </div>
+    </div>
+</div>
+    <div class="footer">
+        <div class="data-holder">
+<div class="credits">
+    <p>
+    Proudly powered by <a href="http://getpelican.com/">Pelican</a>,
+    which takes great advantage of <a href="http://python.org">Python</a>.
+    </p>
+</div>        </div>
+    </div>
+</body>
+</html>
